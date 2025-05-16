@@ -1,6 +1,7 @@
 import http from 'node:http';
 import 'dotenv/config';
 import { WebSocketServer } from 'ws';
+import { checkMessageType, parseString, stringifyObj } from 'utils';
 
 const PORT = process.env.HTTP_PORT;
 
@@ -8,7 +9,7 @@ const closeServers = (
   wss: WebSocketServer,
   server: http.Server<typeof http.IncomingMessage, typeof http.ServerResponse>
 ) => {
-  console.log('Shutting down WebSocket server...');
+  console.log('\nShutting down WebSocket server...');
   // close connection for all clients
   wss.clients.forEach((client) => {
     if (client.readyState === client.OPEN) {
@@ -42,19 +43,21 @@ export const createWSServer = (
     const clientIP = req.socket.remoteAddress;
     console.log(`New WebSocket connection from ${clientIP}`);
     console.log(`Total clients connected: ${wss.clients.size}`);
+    ws.send(JSON.stringify({ type: 'welcome developer', message: 'Hello from server' }));
 
     // handle income messages from client to WS server
-    ws.on('message', (message) => {
+    ws.on('message', async (message) => {
       try {
         // parse string to js object
-        const data = JSON.parse(message.toString());
-        console.log(`Received data: ${data}`);
-        const response = JSON.stringify({
-          data: 'Test from client to ws',
-          type: 'Test'
-        });
+        const data = parseString(message.toString());
+        console.log('Received data:', data);
+
+        const response = await checkMessageType(data);
+
         // send response to client
-        ws.send(response);
+        const responseJSON = stringifyObj(response as unknown as Record<string, unknown>);
+        console.log('Response data:', response);
+        ws.send(responseJSON);
 
         // send data all open clients
         wss.clients.forEach((client) => {
@@ -65,13 +68,11 @@ export const createWSServer = (
             );
           }
         });
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (error) {
+        const err = error as unknown as Error;
         console.error('Invalid JSON received:', message.toString());
-        ws.send(JSON.stringify({ error: 'Invalid JSON format.' }));
+        ws.send(JSON.stringify({ error: err.message }));
       }
-
-      ws.send(JSON.stringify({ type: 'welcome', message: 'Hello from server' }));
 
       ws.on('close', () => {
         console.log('Client disconnected');
