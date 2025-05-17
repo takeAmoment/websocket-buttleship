@@ -21,6 +21,43 @@ export interface IWSRegData {
 
 export interface IWSRegResponse {
   type: ClientMessageTypesEnum;
-  data: IWSRegData;
+  data: IWSRegData | string;
+  id: number;
+}
+
+export interface IRoomUser {
+  name: string;
+  index: string;
+}
+
+export interface IRoom {
+  roomId: string;
+  roomUsers:  Array<IRoomUser>;
+}
+
+export interface IGameData {
+  idGame: string;  
+  idPlayer: string;
+}
+
+export interface ICreateGameRes {
+  type: ClientMessageTypesEnum.CREATE_GAME;
+  data: IGameData;
+  id: number;
+}
+
+export interface IAddUserData {
+  indexRoom: string;
+}
+
+export interface IAddUserToRoomReq {
+  type: ClientMessageTypesEnum.ADD_USER_TO_ROOM;
+  data: IAddUserData;
+  id: number;
+}
+
+export interface IUpdateRoomRes {
+  type: ClientMessageTypesEnum.UPDATE_ROOM;
+  data: Array<IRoom>;
   id: number;
 }

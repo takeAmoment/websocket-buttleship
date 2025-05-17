@@ -52,12 +52,15 @@ export const createWSServer = (
         const data = parseString(message.toString());
         console.log('Received data:', data);
 
-        const response = await checkMessageType(data);
+        const responseArr = await checkMessageType(data);
 
         // send response to client
-        const responseJSON = stringifyObj(response as unknown as Record<string, unknown>);
-        console.log('Response data:', response);
-        ws.send(responseJSON);
+        responseArr?.forEach((response) => {
+          const responseJSON = stringifyObj(response as unknown as Record<string, unknown>);
+          console.log('Response data:', response);
+          ws.send(responseJSON);
+        });
+      
 
         // send data all open clients
         wss.clients.forEach((client) => {
@@ -66,6 +69,12 @@ export const createWSServer = (
             client.send(
               JSON.stringify({ type: 'Test to other clients', data: data })
             );
+            responseArr?.forEach((response) => {
+              const responseJSON = stringifyObj(response as unknown as Record<string, unknown>);
+              console.log('Response data:', response);
+              ws.send(responseJSON);
+            });
+
           }
         });
       } catch (error) {
