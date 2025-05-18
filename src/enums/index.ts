@@ -6,7 +6,8 @@ export enum ClientMessageTypesEnum {
   UPDATE_ROOM = 'update_room',
   ADD_SHIPS = 'add_ships',
   START_GAME = 'start_game',
-  TURN = 'turn'
+  TURN = 'turn',
+  ATTACK = 'attack'
 }
 
 export enum ErrorMessagesEnum {

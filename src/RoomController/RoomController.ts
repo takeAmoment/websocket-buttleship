@@ -1,6 +1,6 @@
 import { ErrorMessagesEnum } from 'enums';
 import { Room } from 'Room/Room';
-import { IShipsData } from 'types';
+import { IAttackData, IShipsData } from 'types';
 
 export class RoomController {
   public rooms: Array<Room>;
@@ -10,6 +10,7 @@ export class RoomController {
   }
 
   async addRoom(userId: string, userName: string, ws: WebSocket) {
+    console.log('ADD room');
     const room = new Room();
     room.roomUsers.push({ name: userName, index: userId});
     room.game.setPlayer1({ name: userName, index: userId, ws});
@@ -64,6 +65,22 @@ export class RoomController {
       } else {
         room.game.setPlayer2Board(ships);
       }
+    } catch (error) {
+      throw new Error((error as unknown as Error).message);
+    }
+  }
+
+  updateGameState(data: IAttackData) {
+    const { gameId } = data;
+
+    try {
+      const room = this.findRoom(gameId);
+
+      if(!room) {
+        throw new Error(ErrorMessagesEnum.ROOM_DOES_NOT_EXIST);
+      }
+
+      room.game.makeAShoot(data);
     } catch (error) {
       throw new Error((error as unknown as Error).message);
     }

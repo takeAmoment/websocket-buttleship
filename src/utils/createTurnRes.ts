@@ -1,9 +1,9 @@
 import { ClientMessageTypesEnum } from 'enums';
 
-export const createTurnRes = (currentIndex: string, id: number) => {
+export const createTurnRes = (currentPlayer: string, id: number) => {
   return {
     type: ClientMessageTypesEnum.TURN,
-    data: JSON.stringify({ currentIndex}),
+    data: JSON.stringify({ currentPlayer}),
     id
   };
 };

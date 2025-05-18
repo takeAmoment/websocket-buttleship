@@ -10,7 +10,7 @@ const closeServers = (
   wss: WebSocketServer,
   server: http.Server<typeof http.IncomingMessage, typeof http.ServerResponse>
 ) => {
-  console.log('\nShutting down WebSocket server...');
+  console.log('\nShutting down WebSocket server...', wss.clients.size);
   // close connection for all clients
   wss.clients.forEach((client) => {
     if (client.readyState === client.OPEN) {
@@ -73,7 +73,7 @@ export const createWSServer = (
             responseArr?.forEach((response) => {
               if(response?.type === ClientMessageTypesEnum.UPDATE_ROOM){
                 const responseJSON = stringifyObj(response as unknown as Record<string, unknown>);
-                console.log('Response data json:', responseJSON);
+                // console.log('Response data json:', responseJSON);
                 client.send(responseJSON);
                 client.send(JSON.stringify({type: response, data: response }));
               }

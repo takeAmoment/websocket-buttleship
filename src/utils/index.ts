@@ -1,11 +1,12 @@
 import { ClientMessageTypesEnum } from 'enums';
 import { RequestHandler } from 'RequestHandler/RequestHandler';
-import { IAddUserData, IClientRequest, IShipsData, IUser, IWSRegResponse } from 'types';
+import { IAddUserData, IAttackData, IClientRequest, IShipsData, IUser, IWSRegResponse } from 'types';
 import { users } from 'usersDB';
 export * from './parseString';
 export * from './stringifyObj';
 export * from './createGameRes';
 export * from './createUpdateRoomRes';
+export * from './createShotResponse';
 
 export const createRegResponse = ({ type, data, id, isError, errorText}: Omit<IWSRegResponse, 'data'> & {data: IUser, isError: boolean, errorText: string }): IWSRegResponse => {
   return {
@@ -26,7 +27,8 @@ export const checkMessageType = async ({ type, data, id}: IClientRequest, ws: We
 
   if(type === ClientMessageTypesEnum.REG) {
    const response = await requestHandler.handleRegRequest({ type, data, id});
-   return [response];
+   const updatedRoomResponse = await requestHandler.getUpdatedRooms();
+   return [response, updatedRoomResponse];
   }
 
   if(type === ClientMessageTypesEnum.CREATE_ROOM) {
@@ -36,6 +38,7 @@ export const checkMessageType = async ({ type, data, id}: IClientRequest, ws: We
   }
 
   if(type === ClientMessageTypesEnum.ADD_USER_TO_ROOM) {
+    console.log('add user to room');
     const { indexRoom } = data as unknown as IAddUserData;
     const createdGameRes = await requestHandler.updateRoom(indexRoom, ws);
     const updatedRoomResponse = await requestHandler.getUpdatedRooms();
@@ -44,6 +47,10 @@ export const checkMessageType = async ({ type, data, id}: IClientRequest, ws: We
 
   if(type === ClientMessageTypesEnum.ADD_SHIPS) {
     await requestHandler.addGameData(data as unknown as IShipsData); 
+  }
+
+  if(type === ClientMessageTypesEnum.ATTACK) {
+    await requestHandler.makeAShoot(data as unknown as IAttackData);
   }
 
 };

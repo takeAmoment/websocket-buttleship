@@ -108,3 +108,37 @@ export interface ITurnRes {
   data: { currentPlayer: string};
   id: number;
 }
+
+export interface IAttackData {
+  gameId: string;
+  x: number;
+  y: number;
+  indexPlayer: string;
+}
+
+export type ShotType =  'miss'|'killed'|'shot';
+
+export interface IAttackResData {
+  position: { x: number, y: number};
+  currentPlayer: string;
+  status: ShotType;
+}
+
+export interface IAttackReq {
+  type: ClientMessageTypesEnum.ATTACK;
+  data: IAttackData;
+  id: number
+}
+
+export interface IAttackRes {
+  type: ClientMessageTypesEnum.ATTACK;
+  data: IAttackResData;
+  id: number;
+}
+
+export interface IPosition {
+  x: number;
+  y: number;
+}
+
+export type PlayerAttackMap = Map<number, Array<IPosition>>

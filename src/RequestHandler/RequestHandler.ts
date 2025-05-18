@@ -1,5 +1,5 @@
 import { RoomController } from 'RoomController/RoomController';
-import { IClientRequest, IShipsData, IUser } from 'types';
+import { IAttackData, IClientRequest, IShipsData, IUser } from 'types';
 import { UserController } from 'UserController/UserController';
 import { rooms } from 'usersDB';
 import { createGameRes, createRegResponse, createUpdateRoomRes } from 'utils';
@@ -71,6 +71,15 @@ export class RequestHandler {
       console.error(errorMessage, 'err');
     }
 
+  }
 
+
+  async makeAShoot(data: IAttackData) {
+    try {
+      this.roomController.updateGameState(data);
+    } catch (error) {
+      const errorMessage = (error as unknown as Error).message;
+      console.error(errorMessage, 'err');
+    }
   }
 }
