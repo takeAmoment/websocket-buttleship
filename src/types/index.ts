@@ -19,9 +19,12 @@ export interface IWSRegData {
   errorText: string
 }
 
+export interface IAddUserData {
+  indexRoom: string;
+}
 export interface IWSRegResponse {
   type: ClientMessageTypesEnum;
-  data: IWSRegData | string;
+  data: IWSRegData | string | IAddUserData;
   id: number;
 }
 
@@ -44,10 +47,6 @@ export interface ICreateGameRes {
   type: ClientMessageTypesEnum.CREATE_GAME;
   data: IGameData;
   id: number;
-}
-
-export interface IAddUserData {
-  indexRoom: string;
 }
 
 export interface IAddUserToRoomReq {

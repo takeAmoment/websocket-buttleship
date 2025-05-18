@@ -1,6 +1,6 @@
 import { ClientMessageTypesEnum } from 'enums';
 import { RequestHandler } from 'RequestHandler/RequestHandler';
-import { IClientRequest, IUser, IWSRegResponse } from 'types';
+import { IAddUserData, IClientRequest, IUser, IWSRegResponse } from 'types';
 import { users } from 'usersDB';
 export * from './parseString';
 export * from './stringifyObj';
@@ -31,13 +31,15 @@ export const checkMessageType = async ({ type, data, id}: IClientRequest) => {
 
   if(type === ClientMessageTypesEnum.CREATE_ROOM) {
    const response = await requestHandler.createRoom();
-   const updatedRoomResponse = await requestHandler.updateRoom();
-   console.log('Updated', updatedRoomResponse);
+   const updatedRoomResponse = await requestHandler.getUpdatedRooms();
    return [response, updatedRoomResponse];
   }
 
   if(type === ClientMessageTypesEnum.ADD_USER_TO_ROOM) {
-    console.log('AAAADDDDDDDDD');
+    const { indexRoom } = data as unknown as IAddUserData;
+    const createdGameRes = await requestHandler.updateRoom(indexRoom);
+    const updatedRoomResponse = await requestHandler.getUpdatedRooms();
+    return [createdGameRes, updatedRoomResponse];
   }
 
 };

@@ -46,10 +46,21 @@ export class RequestHandler {
     }
   }
 
-  async updateRoom() {
+  async getUpdatedRooms() {
     try {
       const rooms = this.roomController.getRoomsWithOnePlayer();
       return createUpdateRoomRes({id: 0, rooms});
+    } catch (error) {
+      const errorMessage = (error as unknown as Error).message;
+      console.error(errorMessage, 'err');
+    }
+  }
+
+  async updateRoom(roomIndex: string) {
+    const { id, name} = this.currentUser;
+    try {
+      this.roomController.addUserToRoom(roomIndex, id, name );
+      return createGameRes({ playerId: id, gameId: roomIndex, id: 0});
     } catch (error) {
       const errorMessage = (error as unknown as Error).message;
       console.error(errorMessage, 'err');

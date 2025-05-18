@@ -2,6 +2,7 @@ import http from 'node:http';
 import 'dotenv/config';
 import { WebSocketServer } from 'ws';
 import { checkMessageType, parseString, stringifyObj } from 'utils';
+import { ClientMessageTypesEnum } from 'enums';
 
 const PORT = process.env.HTTP_PORT;
 
@@ -67,12 +68,16 @@ export const createWSServer = (
           // check if client is open
           if (client.readyState === ws.OPEN) {
             client.send(
-              JSON.stringify({ type: 'Test to other clients', data: data })
+              JSON.stringify({ type: 'Test to other clientsq1', data: data })
             );
             responseArr?.forEach((response) => {
-              const responseJSON = stringifyObj(response as unknown as Record<string, unknown>);
-              console.log('Response data:', response);
-              ws.send(responseJSON);
+              if(response?.type === ClientMessageTypesEnum.UPDATE_ROOM){
+                const responseJSON = stringifyObj(response as unknown as Record<string, unknown>);
+                console.log('Response data json:', responseJSON);
+                client.send(responseJSON);
+                client.send(JSON.stringify({type: response, data: response }));
+              }
+             
             });
 
           }
