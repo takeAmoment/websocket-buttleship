@@ -1,17 +1,45 @@
 import { v4 as uuidv4 } from 'uuid';
 
-import { IAttackData, IPlayer, PlayerAttackMap, IShip, ShotType } from 'types';
+import { IAttackData, IPlayer, PlayerAttackMap, IShip, ShotType, IRandomAttackData } from 'types';
 import { createStartGameRes } from 'utils/createStartGameRes';
 import { createTurnRes } from 'utils/createTurnRes';
 import { createShotResponse } from 'utils';
 import { rooms } from 'usersDB';
 
+const FIELD_SIZE = 10;
+
+export const choseRandomPosition = (previousShots: Set<string>) => {
+  const totalCeils = FIELD_SIZE * FIELD_SIZE;
+  if(previousShots.size >=  totalCeils) {
+    return null;
+  }
+  while (true) {
+    const x = Math.floor(Math.random() * (FIELD_SIZE - 1));
+    const y = Math.floor(Math.random() * (FIELD_SIZE - 1));
+    const key = `${x},${y}`;
+
+    if (!previousShots.has(key)) {
+      return { x, y, previousShots };
+    }
+  }
+
+};
+
 export const checkAttackStatus = (
   x: number,
   y: number,
   ships: IShip[],
-  playerAttackMap: PlayerAttackMap
+  playerAttackMap: PlayerAttackMap,
+  previousShots: Set<string>
 ): { status: ShotType; playerAttackMap: PlayerAttackMap } => {
+  const key = `${x},${y}`;
+  const isAlreadyShooted = previousShots.has(key);
+
+  if(isAlreadyShooted) {
+    throw new Error('This position was shooted');
+  }
+  previousShots.add(key);
+  
   for (let i = 0; i < ships.length; i++) {
     const ship = ships[i];
     if (ship) {
@@ -47,7 +75,9 @@ export class Game {
   public player2: IPlayer | null;
   public player1Board: Array<IShip> | null;
   public player1AttackMap: PlayerAttackMap | null;
+  public player1PreviousShots: Set<string>;
   public player2AttackMap: PlayerAttackMap | null;
+  public player2PreviousShots: Set<string>;
   public player2Board: Array<IShip> | null;
   public turn: IPlayer | null;
 
@@ -60,6 +90,8 @@ export class Game {
     this.turn = null;
     this.player1AttackMap = new Map();
     this.player2AttackMap = new Map();
+    this.player1PreviousShots = new Set<string>();
+    this.player2PreviousShots = new Set<string>();
   }
 
   sendTurn(ws: WebSocket, currentIndex: string) {
@@ -128,43 +160,100 @@ export class Game {
     this.player2Board = data;
     this.checkIsGameStarted();
   }
-
-  makeAShoot(data: IAttackData) {
+  makeAShot(data: IAttackData) {
     const { x, y, indexPlayer } = data;
-
-    const targetBoard =
-      this.player1?.index === indexPlayer ? this.player2Board : this.player1Board;
-
-    const targetAttackMap =
-      this.player1?.index === indexPlayer ? this.player1AttackMap : this.player2AttackMap;
-
-    if(targetBoard && targetAttackMap && this.player1 && this.player2) {
-      const { status, playerAttackMap } = checkAttackStatus(x, y, targetBoard, targetAttackMap);
-
-      this.sendAttackRes(this.player2.ws, indexPlayer, x, y, status);
-
-      this.sendAttackRes(this.player1.ws, indexPlayer, x, y, status);
-
-      if(this.player1?.index === indexPlayer) {
-        this.player1AttackMap = playerAttackMap;
+    if (indexPlayer !== this.turn?.index) {return;}
   
+    const isPlayer1 = this.player1?.index === indexPlayer;
+  
+    const targetBoard = isPlayer1 ? this.player2Board : this.player1Board;
+    const targetAttackMap = isPlayer1 ? this.player2AttackMap : this.player1AttackMap;
+    const prevShotsBoard = isPlayer1 ? this.player1PreviousShots : this.player2PreviousShots;
+    const targetWS = isPlayer1 ? this.player2?.ws : this.player1?.ws;
+    const playerWS = isPlayer1 ? this.player1?.ws : this.player2?.ws;
+  
+    if (targetBoard && targetAttackMap && this.player1 && this.player2) {
+      const { status, playerAttackMap } = checkAttackStatus(x, y, targetBoard, targetAttackMap, prevShotsBoard);
+
+      this.sendAttackRes(playerWS!, indexPlayer, x, y, status);
+      this.sendAttackRes(targetWS!, indexPlayer, x, y, status);
+
+      if (isPlayer1) {
+        this.player2AttackMap = playerAttackMap;
+
         if(status === 'miss') {
           this.turn = this.player2;
           this.sendTurn(this.player1.ws, this.player2.index);
           this.sendTurn(this.player2.ws, this.player2.index);
-        }
-      }else {
-        this.player2AttackMap = playerAttackMap;
-    
+          }
+      } else {
+        this.player1AttackMap = playerAttackMap;
+
         if(status === 'miss') {
           this.turn = this.player1;
           this.sendTurn(this.player1.ws, this.player1.index);
           this.sendTurn(this.player2.ws, this.player1.index);
         }
       }
+    }
+  }
+
+  // makeAShoot(data: IAttackData) {
+  //   const { x, y, indexPlayer } = data;
+
+  //   const targetBoard =
+  //     this.player1?.index === indexPlayer ? this.player2Board : this.player1Board;
+
+  //   const targetAttackMap =
+  //     this.player1?.index === indexPlayer ? this.player1AttackMap : this.player2AttackMap;
+
+  //   if(targetBoard && targetAttackMap && this.player1 && this.player2) {
+  //     const { status, playerAttackMap } = checkAttackStatus(x, y, targetBoard, targetAttackMap);
+
+  //     this.sendAttackRes(this.player2.ws, indexPlayer, x, y, status);
+
+  //     this.sendAttackRes(this.player1.ws, indexPlayer, x, y, status);
+
+  //     if(this.player1?.index === indexPlayer) {
+  //       this.player1AttackMap = playerAttackMap;
+  
+  //       if(status === 'miss') {
+  //         this.turn = this.player2;
+  //         this.sendTurn(this.player1.ws, this.player2.index);
+  //         this.sendTurn(this.player2.ws, this.player2.index);
+  //       }
+  //     }else {
+  //       this.player2AttackMap = playerAttackMap;
     
+  //       if(status === 'miss') {
+  //         this.turn = this.player1;
+  //         this.sendTurn(this.player1.ws, this.player1.index);
+  //         this.sendTurn(this.player2.ws, this.player1.index);
+  //       }
+  //     }
+    
+  //   }
+
+  // }
+
+  makeARandomShot(data: IRandomAttackData) {
+    const { indexPlayer, gameId } = data;
+
+    const isPlayer1 = this.player1?.index === indexPlayer;
+    const targetShotsBoard = isPlayer1 ? this.player2PreviousShots : this.player1PreviousShots;
+    const randomPosition = choseRandomPosition(targetShotsBoard);
+    if(!randomPosition) {
+      throw new Error('Can not find random position');
     }
 
+    const {x, y, previousShots} = randomPosition;
+    if(isPlayer1) {
+      this.player1PreviousShots = previousShots;
+    } else {
+      this.player2PreviousShots = previousShots;
+    }
+
+    this.makeAShot({ x, y, indexPlayer, gameId });
   }
 
 }

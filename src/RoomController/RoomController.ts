@@ -1,6 +1,6 @@
 import { ErrorMessagesEnum } from 'enums';
 import { Room } from 'Room/Room';
-import { IAttackData, IShipsData } from 'types';
+import { IAttackData, IRandomAttackData, IShipsData } from 'types';
 
 export class RoomController {
   public rooms: Array<Room>;
@@ -80,7 +80,23 @@ export class RoomController {
         throw new Error(ErrorMessagesEnum.ROOM_DOES_NOT_EXIST);
       }
 
-      room.game.makeAShoot(data);
+      room.game.makeAShot(data);
+    } catch (error) {
+      throw new Error((error as unknown as Error).message);
+    }
+  }
+
+  makeARandomShot(data: IRandomAttackData) {
+    const { gameId } = data;
+
+    try {
+      const room = this.findRoom(gameId);
+
+      if(!room) {
+        throw new Error(ErrorMessagesEnum.ROOM_DOES_NOT_EXIST);
+      }
+
+      room.game.makeARandomShot(data);
     } catch (error) {
       throw new Error((error as unknown as Error).message);
     }

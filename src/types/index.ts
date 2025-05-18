@@ -141,4 +141,13 @@ export interface IPosition {
   y: number;
 }
 
-export type PlayerAttackMap = Map<number, Array<IPosition>>
+export type PlayerAttackMap = Map<number, Array<IPosition>>;
+export interface IRandomAttackData {
+  gameId: string;
+  indexPlayer: string;
+}
+export interface IRandomAttackReq {
+  type: ClientMessageTypesEnum.RANDOM_ATTACK;
+  data: IRandomAttackData;
+  id: number;
+}

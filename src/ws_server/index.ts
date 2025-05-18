@@ -85,6 +85,7 @@ export const createWSServer = (
       } catch (error) {
         const err = error as unknown as Error;
         console.error('Invalid JSON received:', message.toString());
+        console.error(err.message);
         ws.send(JSON.stringify({ error: err.message }));
       }
 
