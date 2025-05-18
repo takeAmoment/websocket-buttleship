@@ -6,6 +6,12 @@ export interface IUser {
   password: string;
 }
 
+export interface IPlayer {
+  index: string;
+  name: string;
+  ws: WebSocket;
+}
+
 export interface IClientRequest {
   type: ClientMessageTypesEnum;
   data: Omit<IUser, 'id'>;
@@ -58,5 +64,47 @@ export interface IAddUserToRoomReq {
 export interface IUpdateRoomRes {
   type: ClientMessageTypesEnum.UPDATE_ROOM;
   data: Array<IRoom>;
+  id: number;
+}
+
+export type ShipType = 'small'|'medium'|'large'|'huge';
+
+export interface IShip {
+  position: {
+    x: number;
+    y: number;
+  };
+  direction: boolean;
+  length: number;
+  type: ShipType;
+
+}
+
+export interface IShipsData {
+  gameId: string;
+  ships: Array<IShip>;
+  indexPlayer: string;
+}
+
+export interface IAddShipsReq {
+  type: ClientMessageTypesEnum.ADD_SHIPS;
+  data: IShipsData;
+  id: number;
+}
+
+export interface IStartGameData {
+  ships: Array<IShip>;
+  currentPlayerIndex: string;
+}
+
+export interface IStartGameRes {
+  type:ClientMessageTypesEnum.START_GAME;
+  data: IStartGameData;
+  id: number;
+}
+
+export interface ITurnRes {
+  type: ClientMessageTypesEnum.TURN;
+  data: { currentPlayer: string};
   id: number;
 }

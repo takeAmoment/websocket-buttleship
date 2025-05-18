@@ -4,7 +4,9 @@ export enum ClientMessageTypesEnum {
   CREATE_GAME = 'create_game',
   ADD_USER_TO_ROOM = 'add_user_to_room',
   UPDATE_ROOM = 'update_room',
-  ADD_SHIPS = 'add_ships'
+  ADD_SHIPS = 'add_ships',
+  START_GAME = 'start_game',
+  TURN = 'turn'
 }
 
 export enum ErrorMessagesEnum {

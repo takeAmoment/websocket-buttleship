@@ -53,7 +53,7 @@ export const createWSServer = (
         const data = parseString(message.toString());
         console.log('Received data:', data);
 
-        const responseArr = await checkMessageType(data);
+        const responseArr = await checkMessageType(data, ws as unknown as WebSocket);
 
         // send response to client
         responseArr?.forEach((response) => {
