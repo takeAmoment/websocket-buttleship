@@ -65,7 +65,7 @@ export const createWSServer = (
 
         // send response to client
         responseArr?.forEach((response) => {
-          if(response?.type !== ClientMessageTypesEnum.UPDATE_ROOM){
+          if(response?.type && response?.type !== ClientMessageTypesEnum.UPDATE_ROOM && response?.type !== ClientMessageTypesEnum.UPDATE_WINNERS){
           const responseJSON = stringifyObj(response as unknown as Record<string, unknown>);
           console.log('Response data:', response);
           ws.send(responseJSON);
@@ -81,7 +81,7 @@ export const createWSServer = (
               JSON.stringify({ type: 'Test to other clientsq1'})
             );
             responseArr?.forEach((response) => {
-              if(response?.type === ClientMessageTypesEnum.UPDATE_ROOM){
+              if(response?.type === ClientMessageTypesEnum.UPDATE_ROOM || response?.type === ClientMessageTypesEnum.UPDATE_WINNERS){
                 const responseJSON = stringifyObj(response as unknown as Record<string, unknown>);
                 // console.log('Response data json:', responseJSON);
                 client.send(responseJSON);

@@ -15,9 +15,8 @@ export class RoomController {
       throw new Error('Room not found');
     }
 
-    // Check if user is already in any room
     const isUserInAnyRoom = this.rooms.some(r => r.isUserInRoom(userId));
-    console.log(this.rooms);
+
     if (isUserInAnyRoom) {
       throw new Error('User is already in a room');
     }
@@ -35,7 +34,6 @@ export class RoomController {
   }
 
   async addRoom(userId: string, userName: string, ws: WebSocket) {
-    // Check if user is already in any room
     const isUserInAnyRoom = this.rooms.some(room => room.isUserInRoom(userId));
     if (isUserInAnyRoom) {
       console.log('User is already', this.rooms);
@@ -57,21 +55,6 @@ export class RoomController {
 
     return room;
   }
-
-  // async addUserToRoom(roomId: string, userId: string, userName: string, ws: WebSocket) {
-  //   try {
-  //     const room = this.findRoom(roomId);
-
-  //     if(!room || room.roomUsers.length === 2) {
-  //       throw new Error(ErrorMessagesEnum.FULL_ROOM);
-  //     }
-
-  //     room.roomUsers.push({name: userName, index: userId});
-  //     room.game.setPlayer2({name: userName, index: userId, ws});
-  //   } catch (error) {
-  //     throw new Error((error as unknown as Error).message);
-  //   }
-  // }
 
   getRoomsWithOnePlayer() {
     const availableRooms = this.rooms.filter((room) => room.roomUsers.length === 1);
@@ -109,7 +92,13 @@ export class RoomController {
         throw new Error(ErrorMessagesEnum.ROOM_DOES_NOT_EXIST);
       }
 
-      room.game.makeAShot(data);
+      const res = room.game.makeAShot(data);
+      if(res && res.isFinished) {
+        const roomIndex = this.rooms.findIndex((item) => item.roomId === gameId);
+        this.rooms.splice(roomIndex, 1);
+        return res.updatedTable;
+      }
+      return null; 
     } catch (error) {
       throw new Error((error as unknown as Error).message);
     }
@@ -125,7 +114,14 @@ export class RoomController {
         throw new Error(ErrorMessagesEnum.ROOM_DOES_NOT_EXIST);
       }
 
-      room.game.makeARandomShot(data);
+      const res = room.game.makeARandomShot(data);
+
+      if(res && res.isFinished) {
+        const roomIndex = this.rooms.findIndex((item) => item.roomId === gameId);
+        this.rooms.splice(roomIndex, 1);
+        return res.updatedTable;
+      }
+      return null; 
     } catch (error) {
       throw new Error((error as unknown as Error).message);
     }

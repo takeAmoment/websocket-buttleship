@@ -1,8 +1,8 @@
 import { RoomController } from 'RoomController/RoomController';
 import { IAttackData, IClientRequest, IRandomAttackData, IShipsData, IUser } from 'types';
 import { UserController } from 'UserController/UserController';
-import { rooms, socketsUser } from 'usersDB';
-import { createGameRes, createRegResponse, createUpdateRoomRes } from 'utils';
+import { rooms, socketsUser, winnersTable } from 'usersDB';
+import { createGameRes, createRegResponse, createUpdateRoomRes, createUpdateWinnersRes } from 'helpers';
 
 export class RequestHandler {
   public userController: UserController;
@@ -33,8 +33,21 @@ export class RequestHandler {
     }
   }
 
+  async getUpdatedWinnersTable (userId: string, userName: string) {
+    const winnerData = winnersTable.get(userId);
+    const result = {name: userName, wins: 0};
+    if(winnerData) {
+      result.wins = winnerData.wins;
+    } else {
+      winnersTable.set(userId, result);
+    }
+    const winners = Array.from(winnersTable.values());
+    console.log('Winners', winners);
+    const updatedTable = createUpdateWinnersRes(winners,  0);
+    return updatedTable;
+  }
+
   async createRoom(ws: WebSocket) {
-    console.log(socketsUser);
     try {
       const userId = socketsUser.get(ws);
       if(!userId) {
@@ -80,10 +93,9 @@ export class RequestHandler {
 
   }
 
-
   async makeAShoot(data: IAttackData) {
     try {
-      this.roomController.updateGameState(data);
+      return this.roomController.updateGameState(data);
     } catch (error) {
       const errorMessage = (error as unknown as Error).message;
       console.error(errorMessage, 'err');

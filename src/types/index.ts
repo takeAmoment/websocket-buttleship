@@ -20,7 +20,7 @@ export interface IClientRequest {
 
 export interface IWSRegData {
   name: string;
-  index: number | string;
+  index: string;
   error: boolean;
   errorText: string
 }
@@ -150,4 +150,9 @@ export interface IRandomAttackReq {
   type: ClientMessageTypesEnum.RANDOM_ATTACK;
   data: IRandomAttackData;
   id: number;
+}
+
+export interface IWinData {
+  name: string;
+  wins: number;
 }

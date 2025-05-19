@@ -1,112 +1,10 @@
 import { v4 as uuidv4 } from 'uuid';
 import { IAttackData, IPlayer, PlayerAttackMap, IShip, ShotType, IRandomAttackData } from 'types';
-import { createStartGameRes } from 'utils/createStartGameRes';
-import { createTurnRes } from 'utils/createTurnRes';
-import { createShotResponse } from 'utils';
-
-const FIELD_SIZE = 10;
-
-const getSurroundingCells = (shipCells: {x: number, y: number}[], boardSize: number) => {
-  const surrounding = new Set<string>();
-  
-  const shipCellsSet = new Set(shipCells.map(({x, y}) => `${x},${y}`));
-
-  for (const { x, y } of shipCells) {
-    for (let dx = -1; dx <= 1; dx++) {
-      for (let dy = -1; dy <= 1; dy++) {
-        const nx = x + dx;
-        const ny = y + dy;
-        const key = `${nx},${ny}`;
-
-        if (nx >= 0 && nx < boardSize && 
-            ny >= 0 && ny < boardSize && 
-            !shipCellsSet.has(key)) {
-          surrounding.add(key);
-        }
-      }
-    }
-  }
-  return Array.from(surrounding).map(str => {
-    const [x, y] = str.split(',').map(Number);
-    return { x, y };
-  });
-};
-
-export const choseRandomPosition = (previousShots: Set<string>) => {
-  const totalCeils = FIELD_SIZE * FIELD_SIZE;
-  if(previousShots.size >=  totalCeils) {
-    return null;
-  }
-  while (true) {
-    const x = Math.floor(Math.random() * (FIELD_SIZE - 1));
-    const y = Math.floor(Math.random() * (FIELD_SIZE - 1));
-    const key = `${x},${y}`;
-
-    if (!previousShots.has(key)) {
-      return { x, y, previousShots };
-    }
-  }
-
-};
-
-export const checkAttackStatus = (
-  x: number,
-  y: number,
-  ships: IShip[],
-  playerAttackMap: PlayerAttackMap,
-  previousShots: Set<string>
-): {
-  status: ShotType;
-  playerAttackMap: PlayerAttackMap;
-  missedCells: { x?: number; y?: number }[];
-} => {
-  const key = `${x},${y}`;
-  if (previousShots.has(key)) {
-    throw new Error('This position was already shot.');
-  }
-  previousShots.add(key);
-
-  for (let i = 0; i < ships.length; i++) {
-    const ship = ships[i];
-    if (!ship) {continue;}
-
-    const { length, position, direction } = ship;
-    const shipCells: { x: number; y: number }[] = [];
-
-    let isHit = false;
-
-    for (let j = 0; j < length; j++) {
-      const shipX = direction ? position.x : position.x + j;
-      const shipY = direction ? position.y + j : position.y;
-      shipCells.push({ x: shipX, y: shipY });
-
-      if (shipX === x && shipY === y) {
-        isHit = true;
-      }
-    }
-
-    if (isHit) {
-      const hits = playerAttackMap.get(i) || [];
-      hits.push({ x, y });
-      playerAttackMap.set(i, hits);
-
-      const isKilled = hits.length === length;
-
-      return {
-        status: isKilled ? 'killed' : 'shot',
-        playerAttackMap,
-        missedCells: isKilled ? getSurroundingCells(shipCells, FIELD_SIZE) : [],
-      };
-    }
-  }
-
-  return {
-    status: 'miss',
-    playerAttackMap,
-    missedCells: [],
-  };
-};
-
+import { createStartGameRes } from 'helpers/createStartGameRes';
+import { createTurnRes } from 'helpers/createTurnRes';
+import { createFinishRes, createShotResponse, createUpdateWinnersRes } from 'helpers';
+import { checkAttackStatus, choseRandomPosition } from './helpers';
+import { winnersTable } from 'usersDB';
 
 export class Game {
   public gameId: string;
@@ -189,7 +87,8 @@ export class Game {
       }
     });
   }
-  private checkWinCondition(playerAttackMap: PlayerAttackMap): boolean {
+
+  checkWinCondition(playerAttackMap: PlayerAttackMap): boolean {
     let totalHits = 0;
     for (const hits of playerAttackMap.values()) {
       totalHits += hits.length;
@@ -232,7 +131,22 @@ export class Game {
     this.player2Board = data;
     this.checkIsGameStarted();
   }
-  
+
+  finishGame(winner: IPlayer, loser: IPlayer) {
+    const result = createFinishRes(winner.index || '', 0);
+    const winnerData = winnersTable.get(winner?.index)?.wins || 0;
+    const updateData = winnerData + 1;
+    winnersTable.set(winner?.index, { name: winner?.name, wins: updateData });
+    
+    winner?.ws.send(JSON.stringify(result));
+    loser?.ws.send(JSON.stringify(result));
+
+    const winners = Array.from(winnersTable.values());
+    const updatedTable = createUpdateWinnersRes(winners,  0);
+
+    return {isFinished: true, updatedTable};
+  }
+
   makeAShot(data: IAttackData) {
     this.validateGameState();
     const { x, y, indexPlayer } = data;
@@ -259,22 +173,21 @@ export class Game {
         this.player1AttackMap = playerAttackMap;
       }
 
+      if (this.checkWinCondition(playerAttackMap)) {
+        const winner = isPlayer1 ? this.player1 : this.player2;
+        const loser = isPlayer1 ? this.player2 : this.player1;
+        return this.finishGame(winner!, loser!);
+      }
+
       if (status === 'miss') {
         this.switchTurn();
       } else {
         this.sendTurn(this.player1.ws, this.turn?.index || '');
         this.sendTurn(this.player2.ws, this.turn?.index || '');
       }
-
-      if (this.checkWinCondition(playerAttackMap)) {
-        const winnerWs = isPlayer1 ? this.player1?.ws : this.player2?.ws;
-        const loserWs = isPlayer1 ? this.player2?.ws : this.player1?.ws;
-        
-        winnerWs?.send(JSON.stringify({ type: 'GAME_OVER', result: 'WIN' }));
-        loserWs?.send(JSON.stringify({ type: 'GAME_OVER', result: 'LOSE' }));
-        return;
-      }
     }
+
+    return { isFinished: false, updatedTable: null };
   }
 
   makeARandomShot(data: IRandomAttackData) {
@@ -294,7 +207,7 @@ export class Game {
       this.player2PreviousShots = previousShots;
     }
 
-    this.makeAShot({ x, y, indexPlayer, gameId });
+    return this.makeAShot({ x, y, indexPlayer, gameId });
   }
 
 }
