@@ -7,22 +7,16 @@ import { createGameRes, createRegResponse, createUpdateRoomRes, createUpdateWinn
 export class RequestHandler {
   public userController: UserController;
   public roomController: RoomController;
-  public currentUser: IUser;
 
   constructor(users: Array<IUser>) {
     this.userController = new UserController(users);
     this.roomController = new RoomController(rooms);
   }
 
-  setCurrentUser(user: IUser) {
-    this.currentUser = user;
-  }
-
   async handleRegRequest({ type, data, id}: IClientRequest, ws: WebSocket) {
     const { name, password} = data;
     try {
       const result = await this.userController.checkIsExisting(data);
-      this.setCurrentUser(result);
       socketsUser.set(ws, result.id);
 
       return createRegResponse({ data: result, type, id, isError: false, errorText: ''});
@@ -73,10 +67,14 @@ export class RequestHandler {
   }
 
   async updateRoom(roomIndex: string, ws: WebSocket) {
-    const { id, name} = this.currentUser;
     try {
-      this.roomController.addUserToRoom(roomIndex, id, name, ws );
-      return createGameRes({ playerId: id, gameId: roomIndex, id: 0});
+      const userId = socketsUser.get(ws);
+      if(!userId) {
+        throw new Error('User not found');
+      }
+      const user = this.userController.users.find(user => user.id === userId) as IUser;
+      this.roomController.addUserToRoom(roomIndex, user.id, user.name, ws );
+      return createGameRes({ playerId: userId, gameId: roomIndex, id: 0});
     } catch (error) {
       const errorMessage = (error as unknown as Error).message;
       console.error(errorMessage, 'err');

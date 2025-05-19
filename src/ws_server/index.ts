@@ -4,7 +4,7 @@ import { WebSocketServer } from 'ws';
 import { checkMessageType, parseString, stringifyObj } from 'utils';
 import { ClientMessageTypesEnum } from 'enums';
 
-const PORT = process.env.HTTP_PORT;
+const PORT = process.env.WS_PORT || 3000;
 
 const activeConnections = new Map<string, WebSocket>();
 
@@ -33,7 +33,7 @@ export const createWSServer = (
   server: http.Server<typeof http.IncomingMessage, typeof http.ServerResponse>
 ) => {
   // create new ws server
-  const wss = new WebSocketServer({ server });
+  const wss = new WebSocketServer({ port: Number(PORT) });
   console.log('WebSocket server started');
   console.log(`Listening on ws://localhost:${PORT}`);
 
@@ -98,10 +98,14 @@ export const createWSServer = (
         console.error(err.message);
         ws.send(JSON.stringify({ error: err.message }));
       }
+    });
 
-      ws.on('close', () => {
-        console.log('Client disconnected');
-      });
+    ws.on('close', () => {
+      console.log('Client disconnected');
+      if (clientId) {
+        activeConnections.delete(clientId);
+      }
+      console.log(`Remaining clients: ${wss.clients.size}`);
     });
   });
 

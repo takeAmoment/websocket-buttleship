@@ -5,14 +5,16 @@
     "main": "index.ts",
     "type": "module",
     "scripts": {
-        "start": "node ./index.ts",
+        "build": "webpack --config webpack.config.mjs",
+        "start:prod": "node dist/bundle.js",
+        "clean": "rm -rf dist",
         "start:dev1": "tsx watch ./index.ts",
-        "start:dev": "npx nodemon",
+        "start": "npx nodemon",
         "format": "prettier --write \"src/**/*.ts\"",
         "lint": "eslint \"src/**/*.ts\" --fix",
         "test": "echo \"Error: no test specified\" && exit 1"
     },
-    "author": "Andrei Auchynnikau",
+    "author": "",
     "keywords": [],
     "license": "ISC",
     "devDependencies": {
@@ -21,17 +23,21 @@
         "@types/ws": "^8.18.1",
         "@typescript-eslint/eslint-plugin": "^8.32.1",
         "@typescript-eslint/parser": "^8.32.1",
+        "copy-webpack-plugin": "^13.0.0",
         "eslint": "^9.26.0",
         "eslint-config-prettier": "^10.1.5",
         "eslint-plugin-prettier": "^5.4.0",
         "globals": "^16.1.0",
         "nodemon": "^2.0.16",
         "prettier": "^3.5.3",
+        "ts-loader": "^9.5.2",
         "ts-node": "^10.9.2",
         "ts-node-dev": "^2.0.0",
         "tsx": "^4.19.4",
         "typescript": "^5.8.3",
-        "typescript-eslint": "^8.32.1"
+        "typescript-eslint": "^8.32.1",
+        "webpack": "^5.99.8",
+        "webpack-cli": "^6.0.1"
     },
     "dependencies": {
         "dotenv": "^16.5.0",
