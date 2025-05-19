@@ -20,13 +20,13 @@ export const createRegResponse = ({ type, data, id, isError, errorText}: Omit<IW
     }
   };
 };
+
 const requestHandler = new RequestHandler(users);
 
 export const checkMessageType = async ({ type, data, id}: IClientRequest, ws: WebSocket) => {
 
-
   if(type === ClientMessageTypesEnum.REG) {
-   const response = await requestHandler.handleRegRequest({ type, data, id});
+   const response = await requestHandler.handleRegRequest({ type, data, id}, ws);
    const updatedRoomResponse = await requestHandler.getUpdatedRooms();
    return [response, updatedRoomResponse];
   }

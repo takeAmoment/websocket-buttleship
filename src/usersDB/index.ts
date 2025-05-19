@@ -7,3 +7,5 @@ users.push(new User('admin', 'admin'));
 users.push(new User('newAdmin', 'newAdmin'));
 
 export const rooms: Array<Room> = [];
+
+export const socketsUser = new Map<WebSocket, string>();

@@ -17,6 +17,7 @@ export class RoomController {
 
     // Check if user is already in any room
     const isUserInAnyRoom = this.rooms.some(r => r.isUserInRoom(userId));
+    console.log(this.rooms);
     if (isUserInAnyRoom) {
       throw new Error('User is already in a room');
     }

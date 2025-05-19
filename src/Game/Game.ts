@@ -1,17 +1,13 @@
 import { v4 as uuidv4 } from 'uuid';
-
 import { IAttackData, IPlayer, PlayerAttackMap, IShip, ShotType, IRandomAttackData } from 'types';
 import { createStartGameRes } from 'utils/createStartGameRes';
 import { createTurnRes } from 'utils/createTurnRes';
 import { createShotResponse } from 'utils';
-import { rooms } from 'usersDB';
 
 const FIELD_SIZE = 10;
 
 const getSurroundingCells = (shipCells: {x: number, y: number}[], boardSize: number) => {
   const surrounding = new Set<string>();
-
-  console.log('SHIPS cells', shipCells);
   
   const shipCellsSet = new Set(shipCells.map(({x, y}) => `${x},${y}`));
 
@@ -21,7 +17,6 @@ const getSurroundingCells = (shipCells: {x: number, y: number}[], boardSize: num
         const nx = x + dx;
         const ny = y + dy;
         const key = `${nx},${ny}`;
-        console.log('KEY', key);
 
         if (nx >= 0 && nx < boardSize && 
             ny >= 0 && ny < boardSize && 
@@ -31,13 +26,11 @@ const getSurroundingCells = (shipCells: {x: number, y: number}[], boardSize: num
       }
     }
   }
-  console.log('Surrounding', surrounding);
   return Array.from(surrounding).map(str => {
     const [x, y] = str.split(',').map(Number);
     return { x, y };
   });
 };
-
 
 export const choseRandomPosition = (previousShots: Set<string>) => {
   const totalCeils = FIELD_SIZE * FIELD_SIZE;
@@ -62,49 +55,58 @@ export const checkAttackStatus = (
   ships: IShip[],
   playerAttackMap: PlayerAttackMap,
   previousShots: Set<string>
-): { status: ShotType; playerAttackMap: PlayerAttackMap, missedCells: [] | {x?: number, y?: number}[]} => {
+): {
+  status: ShotType;
+  playerAttackMap: PlayerAttackMap;
+  missedCells: { x?: number; y?: number }[];
+} => {
   const key = `${x},${y}`;
-  const isAlreadyShooted = previousShots.has(key);
-
-  if(isAlreadyShooted) {
-    throw new Error('This position was shooted');
+  if (previousShots.has(key)) {
+    throw new Error('This position was already shot.');
   }
   previousShots.add(key);
-  
+
   for (let i = 0; i < ships.length; i++) {
     const ship = ships[i];
-    if (ship) {
-      const { length, position, direction } = ship;
+    if (!ship) {continue;}
 
-      const shipCells = [];
+    const { length, position, direction } = ship;
+    const shipCells: { x: number; y: number }[] = [];
 
-      for (let j = 0; j < length; j++) {
-        // if direction is true - vertical
-        const shipX = direction ? position.x : position.x + j;
-        const shipY = direction ? position.y + j : position.y;
-        shipCells.push({x: shipX, y: shipY});
+    let isHit = false;
 
-        if (shipX === x && shipY === y) {
+    for (let j = 0; j < length; j++) {
+      const shipX = direction ? position.x : position.x + j;
+      const shipY = direction ? position.y + j : position.y;
+      shipCells.push({ x: shipX, y: shipY });
 
-          const hits = playerAttackMap.get(i) || [];
-          hits.push({ x, y });
-          playerAttackMap.set(i, hits);
-
-          const isKilled = hits.length === length;
-          const missedCells = isKilled ? getSurroundingCells(shipCells, FIELD_SIZE) : [];
-          console.log('MISSED', missedCells);
-          return {
-            status: isKilled ? 'killed' : 'shot',
-            playerAttackMap,
-            missedCells
-          };
-        }
+      if (shipX === x && shipY === y) {
+        isHit = true;
       }
+    }
+
+    if (isHit) {
+      const hits = playerAttackMap.get(i) || [];
+      hits.push({ x, y });
+      playerAttackMap.set(i, hits);
+
+      const isKilled = hits.length === length;
+
+      return {
+        status: isKilled ? 'killed' : 'shot',
+        playerAttackMap,
+        missedCells: isKilled ? getSurroundingCells(shipCells, FIELD_SIZE) : [],
+      };
     }
   }
 
-  return { status: 'miss', playerAttackMap, missedCells: [] };
+  return {
+    status: 'miss',
+    playerAttackMap,
+    missedCells: [],
+  };
 };
+
 
 export class Game {
   public gameId: string;
@@ -159,8 +161,7 @@ export class Game {
 
   sendTurn(ws: WebSocket, currentIndex: string) {
     const response = createTurnRes(currentIndex, 0);
-    ws.send(JSON.stringify({ type: this.turn?.index}));
-    ws.send(JSON.stringify({ type: response.data}));
+
     ws.send(JSON.stringify(response));
   }
 
@@ -177,7 +178,6 @@ export class Game {
 
   sendAttackRes(ws: WebSocket, currentIndex: string, x: number, y: number, status: ShotType, missedCells: [] | {x?: number, y?: number}[]) {
     const response = createShotResponse({currentPlayer: currentIndex, x, y, status, id: 0});
-    console.log('MISS', missedCells);
 
     ws.send(JSON.stringify(response));
 
@@ -205,8 +205,7 @@ export class Game {
       this.player2Board &&
       this.turn
     ) {
-      this.player1.ws.send(JSON.stringify({ type: 'SENDDD' }));
-      this.player2.ws.send(JSON.stringify({ type: 'PLAYER2' }));
+   
       this.startGame(this.player1.ws, this.player1Board, 0, this.player1.index);
       this.startGame(this.player2.ws, this.player2Board, 0, this.player2.index);
 
@@ -218,12 +217,10 @@ export class Game {
   setPlayer1(user: IPlayer) {
     this.player1 = user;
     this.turn = user;
-    console.log('PLAYER1', user, rooms);
   }
 
   setPlayer2(user: IPlayer) {
     this.player2 = user;
-    console.log('PLAYER2', user, rooms);
   }
 
   setPlayer1Board(data: Array<IShip>) {
@@ -235,6 +232,7 @@ export class Game {
     this.player2Board = data;
     this.checkIsGameStarted();
   }
+  
   makeAShot(data: IAttackData) {
     this.validateGameState();
     const { x, y, indexPlayer } = data;
@@ -263,6 +261,9 @@ export class Game {
 
       if (status === 'miss') {
         this.switchTurn();
+      } else {
+        this.sendTurn(this.player1.ws, this.turn?.index || '');
+        this.sendTurn(this.player2.ws, this.turn?.index || '');
       }
 
       if (this.checkWinCondition(playerAttackMap)) {

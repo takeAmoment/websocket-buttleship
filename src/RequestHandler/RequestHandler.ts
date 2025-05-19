@@ -1,7 +1,7 @@
 import { RoomController } from 'RoomController/RoomController';
 import { IAttackData, IClientRequest, IRandomAttackData, IShipsData, IUser } from 'types';
 import { UserController } from 'UserController/UserController';
-import { rooms } from 'usersDB';
+import { rooms, socketsUser } from 'usersDB';
 import { createGameRes, createRegResponse, createUpdateRoomRes } from 'utils';
 
 export class RequestHandler {
@@ -18,11 +18,12 @@ export class RequestHandler {
     this.currentUser = user;
   }
 
-  async handleRegRequest({ type, data, id}: IClientRequest) {
+  async handleRegRequest({ type, data, id}: IClientRequest, ws: WebSocket) {
     const { name, password} = data;
     try {
       const result = await this.userController.checkIsExisting(data);
       this.setCurrentUser(result);
+      socketsUser.set(ws, result.id);
 
       return createRegResponse({ data: result, type, id, isError: false, errorText: ''});
     } catch (error) {
@@ -33,9 +34,15 @@ export class RequestHandler {
   }
 
   async createRoom(ws: WebSocket) {
+    console.log(socketsUser);
     try {
-      const room = await this.roomController.addRoom(this.currentUser.id, this.currentUser.name, ws);
-      return createGameRes({ playerId: this.currentUser.id, gameId: room.roomId, id: 0});
+      const userId = socketsUser.get(ws);
+      if(!userId) {
+        throw new Error('User not found');
+      }
+      const user = this.userController.users.find(user => user.id === userId) as IUser;
+      const room = await this.roomController.addRoom(user.id, user.name, ws);
+      return createGameRes({ playerId: user.id, gameId: room.roomId, id: 0});
     } catch (error) {
       const errorMessage = (error as unknown as Error).message;
       console.error(errorMessage, 'err');
