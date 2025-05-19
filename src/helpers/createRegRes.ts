@@ -1,6 +1,16 @@
 import { IWSRegResponse, IUser } from 'types';
 
-export const createRegResponse = ({ type, data, id, isError, errorText}: Omit<IWSRegResponse, 'data'> & {data: IUser, isError: boolean, errorText: string }): IWSRegResponse => {
+export const createRegResponse = ({
+  type,
+  data,
+  id,
+  isError,
+  errorText,
+}: Omit<IWSRegResponse, 'data'> & {
+  data: IUser;
+  isError: boolean;
+  errorText: string;
+}): IWSRegResponse => {
   return {
     type,
     id,
@@ -8,7 +18,7 @@ export const createRegResponse = ({ type, data, id, isError, errorText}: Omit<IW
       name: data.name,
       index: data.id,
       error: isError,
-      errorText
-    }
+      errorText,
+    },
   };
 };

@@ -22,7 +22,7 @@ export interface IWSRegData {
   name: string;
   index: string;
   error: boolean;
-  errorText: string
+  errorText: string;
 }
 
 export interface IAddUserData {
@@ -41,11 +41,11 @@ export interface IRoomUser {
 
 export interface IRoom {
   roomId: string;
-  roomUsers:  Array<IRoomUser>;
+  roomUsers: Array<IRoomUser>;
 }
 
 export interface IGameData {
-  idGame: string;  
+  idGame: string;
   idPlayer: string;
 }
 
@@ -67,7 +67,7 @@ export interface IUpdateRoomRes {
   id: number;
 }
 
-export type ShipType = 'small'|'medium'|'large'|'huge';
+export type ShipType = 'small' | 'medium' | 'large' | 'huge';
 
 export interface IShip {
   position: {
@@ -77,7 +77,6 @@ export interface IShip {
   direction: boolean;
   length: number;
   type: ShipType;
-
 }
 
 export interface IShipsData {
@@ -98,14 +97,14 @@ export interface IStartGameData {
 }
 
 export interface IStartGameRes {
-  type:ClientMessageTypesEnum.START_GAME;
+  type: ClientMessageTypesEnum.START_GAME;
   data: IStartGameData;
   id: number;
 }
 
 export interface ITurnRes {
   type: ClientMessageTypesEnum.TURN;
-  data: { currentPlayer: string};
+  data: { currentPlayer: string };
   id: number;
 }
 
@@ -116,10 +115,10 @@ export interface IAttackData {
   indexPlayer: string;
 }
 
-export type ShotType =  'miss'|'killed'|'shot';
+export type ShotType = 'miss' | 'killed' | 'shot';
 
 export interface IAttackResData {
-  position: { x: number, y: number};
+  position: { x: number; y: number };
   currentPlayer: string;
   status: ShotType;
 }
@@ -127,7 +126,7 @@ export interface IAttackResData {
 export interface IAttackReq {
   type: ClientMessageTypesEnum.ATTACK;
   data: IAttackData;
-  id: number
+  id: number;
 }
 
 export interface IAttackRes {

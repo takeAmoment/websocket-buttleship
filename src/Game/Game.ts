@@ -1,8 +1,19 @@
 import { v4 as uuidv4 } from 'uuid';
-import { IAttackData, IPlayer, PlayerAttackMap, IShip, ShotType, IRandomAttackData } from 'types';
+import {
+  IAttackData,
+  IPlayer,
+  PlayerAttackMap,
+  IShip,
+  ShotType,
+  IRandomAttackData,
+} from 'types';
 import { createStartGameRes } from 'helpers/createStartGameRes';
 import { createTurnRes } from 'helpers/createTurnRes';
-import { createFinishRes, createShotResponse, createUpdateWinnersRes } from 'helpers';
+import {
+  createFinishRes,
+  createShotResponse,
+  createUpdateWinnersRes,
+} from 'helpers';
 import { checkAttackStatus, choseRandomPosition } from './helpers';
 import { winnersTable } from 'usersDB';
 
@@ -49,7 +60,6 @@ export class Game {
     } else {
       this.turn = this.player1;
     }
-    
 
     if (this.player1?.ws && this.player2?.ws) {
       this.sendTurn(this.player1.ws, this.turn?.index || '');
@@ -67,21 +77,40 @@ export class Game {
     ws: WebSocket,
     ships: Array<IShip>,
     id: number,
-    playerIndex: string
+    playerIndex: string,
   ) {
     const response = createStartGameRes({ ships, id, playerIndex });
 
     ws.send(JSON.stringify(response));
   }
 
-  sendAttackRes(ws: WebSocket, currentIndex: string, x: number, y: number, status: ShotType, missedCells: [] | {x?: number, y?: number}[]) {
-    const response = createShotResponse({currentPlayer: currentIndex, x, y, status, id: 0});
+  sendAttackRes(
+    ws: WebSocket,
+    currentIndex: string,
+    x: number,
+    y: number,
+    status: ShotType,
+    missedCells: [] | { x?: number; y?: number }[],
+  ) {
+    const response = createShotResponse({
+      currentPlayer: currentIndex,
+      x,
+      y,
+      status,
+      id: 0,
+    });
 
     ws.send(JSON.stringify(response));
 
     missedCells?.forEach((cell) => {
-      if(cell.x !== undefined && cell.y !== undefined) {
-        const response = createShotResponse({currentPlayer: currentIndex, x: cell.x, y: cell.y, status: 'miss', id: 0});
+      if (cell.x !== undefined && cell.y !== undefined) {
+        const response = createShotResponse({
+          currentPlayer: currentIndex,
+          x: cell.x,
+          y: cell.y,
+          status: 'miss',
+          id: 0,
+        });
 
         ws.send(JSON.stringify(response));
       }
@@ -104,7 +133,6 @@ export class Game {
       this.player2Board &&
       this.turn
     ) {
-   
       this.startGame(this.player1.ws, this.player1Board, 0, this.player1.index);
       this.startGame(this.player2.ws, this.player2Board, 0, this.player2.index);
 
@@ -137,38 +165,49 @@ export class Game {
     const winnerData = winnersTable.get(winner?.index)?.wins || 0;
     const updateData = winnerData + 1;
     winnersTable.set(winner?.index, { name: winner?.name, wins: updateData });
-    
+
     winner?.ws.send(JSON.stringify(result));
     loser?.ws.send(JSON.stringify(result));
 
     const winners = Array.from(winnersTable.values());
-    const updatedTable = createUpdateWinnersRes(winners,  0);
+    const updatedTable = createUpdateWinnersRes(winners, 0);
 
-    return {isFinished: true, updatedTable};
+    return { isFinished: true, updatedTable };
   }
 
   makeAShot(data: IAttackData) {
     this.validateGameState();
     const { x, y, indexPlayer } = data;
-    if (indexPlayer !== this.turn?.index) {return;}
-  
+    if (indexPlayer !== this.turn?.index) {
+      return;
+    }
+
     const isPlayer1 = this.player1?.index === indexPlayer;
-  
+
     const targetBoard = isPlayer1 ? this.player2Board : this.player1Board;
-    const targetAttackMap = isPlayer1 ? this.player2AttackMap : this.player1AttackMap;
-    const prevShotsBoard = isPlayer1 ? this.player1PreviousShots : this.player2PreviousShots;
+    const targetAttackMap = isPlayer1
+      ? this.player2AttackMap
+      : this.player1AttackMap;
+    const prevShotsBoard = isPlayer1
+      ? this.player1PreviousShots
+      : this.player2PreviousShots;
     const targetWS = isPlayer1 ? this.player2?.ws : this.player1?.ws;
     const playerWS = isPlayer1 ? this.player1?.ws : this.player2?.ws;
-  
+
     if (targetBoard && targetAttackMap && this.player1 && this.player2) {
-      const { status, playerAttackMap, missedCells } = checkAttackStatus(x, y, targetBoard, targetAttackMap, prevShotsBoard);
+      const { status, playerAttackMap, missedCells } = checkAttackStatus(
+        x,
+        y,
+        targetBoard,
+        targetAttackMap,
+        prevShotsBoard,
+      );
 
       this.sendAttackRes(playerWS!, indexPlayer, x, y, status, missedCells);
       this.sendAttackRes(targetWS!, indexPlayer, x, y, status, missedCells);
 
       if (isPlayer1) {
         this.player2AttackMap = playerAttackMap;
-
       } else {
         this.player1AttackMap = playerAttackMap;
       }
@@ -194,14 +233,16 @@ export class Game {
     const { indexPlayer, gameId } = data;
 
     const isPlayer1 = this.player1?.index === indexPlayer;
-    const targetShotsBoard = isPlayer1 ? this.player2PreviousShots : this.player1PreviousShots;
+    const targetShotsBoard = isPlayer1
+      ? this.player2PreviousShots
+      : this.player1PreviousShots;
     const randomPosition = choseRandomPosition(targetShotsBoard);
-    if(!randomPosition) {
+    if (!randomPosition) {
       throw new Error('Can not find random position');
     }
 
-    const {x, y, previousShots} = randomPosition;
-    if(isPlayer1) {
+    const { x, y, previousShots } = randomPosition;
+    if (isPlayer1) {
       this.player1PreviousShots = previousShots;
     } else {
       this.player2PreviousShots = previousShots;
@@ -209,5 +250,4 @@ export class Game {
 
     return this.makeAShot({ x, y, indexPlayer, gameId });
   }
-
 }

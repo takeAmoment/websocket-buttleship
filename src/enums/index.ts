@@ -11,6 +11,7 @@ export enum ClientMessageTypesEnum {
   RANDOM_ATTACK = 'randomAttack',
   FINISH = 'finish',
   UPDATE_WINNERS = 'update_winners',
+  SINGLE_PLAY = 'single_play',
 }
 
 export enum ErrorMessagesEnum {
@@ -18,5 +19,5 @@ export enum ErrorMessagesEnum {
   JSON_PARSE_ERROR = 'JSON parse error.',
   PASSWORD_INCORRECT = 'Please check password.',
   FULL_ROOM = 'Room is full.',
-  ROOM_DOES_NOT_EXIST = 'This room does not exist.'
+  ROOM_DOES_NOT_EXIST = 'This room does not exist.',
 }

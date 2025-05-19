@@ -11,10 +11,10 @@ export class UserController {
 
   async checkIsExisting({ name, password }: Omit<IUser, 'id'>) {
     const user = this.users.find((item) => item.name === name);
-    if(!user) {
+    if (!user) {
       this.users.push(new User(name, password));
     }
- 
+
     if (!user) {
       throw new Error(ErrorMessagesEnum.USER_WAS_NOT_FOUND);
     }
@@ -26,4 +26,3 @@ export class UserController {
     return user;
   }
 }
-

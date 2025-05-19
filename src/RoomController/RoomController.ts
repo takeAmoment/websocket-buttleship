@@ -9,13 +9,18 @@ export class RoomController {
     this.rooms = rooms;
   }
 
-  addUserToRoom(roomId: string, userId: string, userName: string, ws: WebSocket) {
-    const room = this.rooms.find(room => room.roomId === roomId);
+  addUserToRoom(
+    roomId: string,
+    userId: string,
+    userName: string,
+    ws: WebSocket,
+  ) {
+    const room = this.rooms.find((room) => room.roomId === roomId);
     if (!room) {
       throw new Error('Room not found');
     }
 
-    const isUserInAnyRoom = this.rooms.some(r => r.isUserInRoom(userId));
+    const isUserInAnyRoom = this.rooms.some((r) => r.isUserInRoom(userId));
 
     if (isUserInAnyRoom) {
       throw new Error('User is already in a room');
@@ -34,7 +39,9 @@ export class RoomController {
   }
 
   async addRoom(userId: string, userName: string, ws: WebSocket) {
-    const isUserInAnyRoom = this.rooms.some(room => room.isUserInRoom(userId));
+    const isUserInAnyRoom = this.rooms.some((room) =>
+      room.isUserInRoom(userId),
+    );
     if (isUserInAnyRoom) {
       console.log('User is already', this.rooms);
       throw new Error('User is already in a room. Room');
@@ -49,7 +56,7 @@ export class RoomController {
 
   findRoom(roomId: string) {
     const room = this.rooms.find((item) => item.roomId === roomId);
-    if(!room) {
+    if (!room) {
       throw new Error(ErrorMessagesEnum.ROOM_DOES_NOT_EXIST);
     }
 
@@ -57,7 +64,9 @@ export class RoomController {
   }
 
   getRoomsWithOnePlayer() {
-    const availableRooms = this.rooms.filter((room) => room.roomUsers.length === 1);
+    const availableRooms = this.rooms.filter(
+      (room) => room.roomUsers.length === 1,
+    );
 
     return availableRooms;
   }
@@ -68,11 +77,11 @@ export class RoomController {
     try {
       const room = this.findRoom(gameId);
 
-      if(!room) {
+      if (!room) {
         throw new Error(ErrorMessagesEnum.ROOM_DOES_NOT_EXIST);
       }
       // console.log('ADD board', gameId, indexPlayer, room.game.player1?.index, room.game.player2?.index);
-      if(room.game.player1?.index === indexPlayer) {
+      if (room.game.player1?.index === indexPlayer) {
         room.game.setPlayer1Board(ships);
       } else {
         room.game.setPlayer2Board(ships);
@@ -88,17 +97,19 @@ export class RoomController {
     try {
       const room = this.findRoom(gameId);
 
-      if(!room) {
+      if (!room) {
         throw new Error(ErrorMessagesEnum.ROOM_DOES_NOT_EXIST);
       }
 
       const res = room.game.makeAShot(data);
-      if(res && res.isFinished) {
-        const roomIndex = this.rooms.findIndex((item) => item.roomId === gameId);
+      if (res && res.isFinished) {
+        const roomIndex = this.rooms.findIndex(
+          (item) => item.roomId === gameId,
+        );
         this.rooms.splice(roomIndex, 1);
         return res.updatedTable;
       }
-      return null; 
+      return null;
     } catch (error) {
       throw new Error((error as unknown as Error).message);
     }
@@ -110,18 +121,20 @@ export class RoomController {
     try {
       const room = this.findRoom(gameId);
 
-      if(!room) {
+      if (!room) {
         throw new Error(ErrorMessagesEnum.ROOM_DOES_NOT_EXIST);
       }
 
       const res = room.game.makeARandomShot(data);
 
-      if(res && res.isFinished) {
-        const roomIndex = this.rooms.findIndex((item) => item.roomId === gameId);
+      if (res && res.isFinished) {
+        const roomIndex = this.rooms.findIndex(
+          (item) => item.roomId === gameId,
+        );
         this.rooms.splice(roomIndex, 1);
         return res.updatedTable;
       }
-      return null; 
+      return null;
     } catch (error) {
       throw new Error((error as unknown as Error).message);
     }

@@ -17,7 +17,7 @@ export default defineConfig([
       globals: globals.node,
     },
     ...js.configs.recommended,
-    ignores: ['**/temp.js', 'config/*'],
+    ignores: ['**/temp.js', 'config/*', 'dist/*', 'front/*', 'node_modules/*'],
     plugins: {
       '@typescript-eslint': tseslint.plugin,
       prettier: prettierPlugin, 

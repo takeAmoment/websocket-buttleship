@@ -1,12 +1,15 @@
 /* eslint-disable quotes */
-import { IShip, PlayerAttackMap, ShotType } from "types";
+import { IShip, PlayerAttackMap, ShotType } from 'types';
 
 const FIELD_SIZE = 10;
 
-export const getSurroundingCells = (shipCells: {x: number, y: number}[], boardSize: number) => {
+export const getSurroundingCells = (
+  shipCells: { x: number; y: number }[],
+  boardSize: number,
+) => {
   const surrounding = new Set<string>();
-  
-  const shipCellsSet = new Set(shipCells.map(({x, y}) => `${x},${y}`));
+
+  const shipCellsSet = new Set(shipCells.map(({ x, y }) => `${x},${y}`));
 
   for (const { x, y } of shipCells) {
     for (let dx = -1; dx <= 1; dx++) {
@@ -15,15 +18,19 @@ export const getSurroundingCells = (shipCells: {x: number, y: number}[], boardSi
         const ny = y + dy;
         const key = `${nx},${ny}`;
 
-        if (nx >= 0 && nx < boardSize && 
-            ny >= 0 && ny < boardSize && 
-            !shipCellsSet.has(key)) {
+        if (
+          nx >= 0 &&
+          nx < boardSize &&
+          ny >= 0 &&
+          ny < boardSize &&
+          !shipCellsSet.has(key)
+        ) {
           surrounding.add(key);
         }
       }
     }
   }
-  return Array.from(surrounding).map(str => {
+  return Array.from(surrounding).map((str) => {
     const [x, y] = str.split(',').map(Number);
     return { x, y };
   });
@@ -31,7 +38,7 @@ export const getSurroundingCells = (shipCells: {x: number, y: number}[], boardSi
 
 export const choseRandomPosition = (previousShots: Set<string>) => {
   const totalCeils = FIELD_SIZE * FIELD_SIZE;
-  if(previousShots.size >=  totalCeils) {
+  if (previousShots.size >= totalCeils) {
     return null;
   }
   while (true) {
@@ -43,7 +50,6 @@ export const choseRandomPosition = (previousShots: Set<string>) => {
       return { x, y, previousShots };
     }
   }
-
 };
 
 export const checkAttackStatus = (
@@ -51,7 +57,7 @@ export const checkAttackStatus = (
   y: number,
   ships: IShip[],
   playerAttackMap: PlayerAttackMap,
-  previousShots: Set<string>
+  previousShots: Set<string>,
 ): {
   status: ShotType;
   playerAttackMap: PlayerAttackMap;
@@ -65,7 +71,9 @@ export const checkAttackStatus = (
 
   for (let i = 0; i < ships.length; i++) {
     const ship = ships[i];
-    if (!ship) {continue;}
+    if (!ship) {
+      continue;
+    }
 
     const { length, position, direction } = ship;
     const shipCells: { x: number; y: number }[] = [];
