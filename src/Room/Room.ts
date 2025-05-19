@@ -12,4 +12,20 @@ export class Room implements IRoom{
     this.roomUsers = [];
     this.game = new Game();
   }
+
+  isUserInRoom(userId: string): boolean {
+    return this.roomUsers.some(user => user.index === userId);
+  }
+
+  // Add validation when adding user
+  addUser(userId: string, userName: string): boolean {
+    if (this.isUserInRoom(userId)) {
+      return false;
+    }
+    if (this.roomUsers.length >= 2) {
+      return false;
+    }
+    this.roomUsers.push({ index: userId, name: userName});
+    return true;
+  }
 }

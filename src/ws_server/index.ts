@@ -6,6 +6,8 @@ import { ClientMessageTypesEnum } from 'enums';
 
 const PORT = process.env.HTTP_PORT;
 
+const activeConnections = new Map<string, WebSocket>();
+
 const closeServers = (
   wss: WebSocketServer,
   server: http.Server<typeof http.IncomingMessage, typeof http.ServerResponse>
@@ -31,15 +33,21 @@ export const createWSServer = (
   server: http.Server<typeof http.IncomingMessage, typeof http.ServerResponse>
 ) => {
   // create new ws server
-  const wss = new WebSocketServer({ server }, () => {
-    console.log('WebSocket server started');
-    console.log(`Listening on ws://localhost:${PORT}`);
-  });
+  const wss = new WebSocketServer({ server });
   console.log('WebSocket server started');
   console.log(`Listening on ws://localhost:${PORT}`);
 
   // ws - client object, req - http request
   wss.on('connection', (ws, req) => {
+    const clientId = req.headers['sec-websocket-key'];
+    
+    // Prevent duplicate connections
+    if (!clientId || activeConnections.has(clientId)) {
+      ws.close(1008, 'Duplicate connection');
+      return;
+    }
+    
+    activeConnections.set(clientId, ws as unknown as WebSocket);
     console.log('Client connected.');
     const clientIP = req.socket.remoteAddress;
     console.log(`New WebSocket connection from ${clientIP}`);
@@ -57,9 +65,11 @@ export const createWSServer = (
 
         // send response to client
         responseArr?.forEach((response) => {
+          if(response?.type !== ClientMessageTypesEnum.UPDATE_ROOM){
           const responseJSON = stringifyObj(response as unknown as Record<string, unknown>);
           console.log('Response data:', response);
           ws.send(responseJSON);
+          }
         });
       
 
@@ -68,14 +78,14 @@ export const createWSServer = (
           // check if client is open
           if (client.readyState === ws.OPEN) {
             client.send(
-              JSON.stringify({ type: 'Test to other clientsq1', data: data })
+              JSON.stringify({ type: 'Test to other clientsq1'})
             );
             responseArr?.forEach((response) => {
               if(response?.type === ClientMessageTypesEnum.UPDATE_ROOM){
                 const responseJSON = stringifyObj(response as unknown as Record<string, unknown>);
                 // console.log('Response data json:', responseJSON);
                 client.send(responseJSON);
-                client.send(JSON.stringify({type: response, data: response }));
+                // client.send(JSON.stringify({type: response, data: response }));
               }
              
             });
